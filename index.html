@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket Chat</title>
+    <style>
+        #chat { width: 300px; height: 200px; border: 1px solid #ccc; overflow-y: scroll; margin-bottom: 10px; padding: 5px; }
+    </style>
+</head>
+<body>
+    <div id="chat"></div>
+    <input type="text" id="messageInput" placeholder="Введите сообщение...">
+    <button onclick="send()">Отправить</button>
+
+    <script>
+        // 1. УСТАНОВКА СВЯЗИ: Подключаемся к нашему Python-серверу
+        const socket = new WebSocket('ws://192.168.10.82:8765');
+        const chatDiv = document.getElementById('chat');
+        const input = document.getElementById('messageInput');
+
+        // 2. ПРИЕМ: Обработчик события прихода данных от сервера
+        socket.onmessage = function(event) {
+            const messageElement = document.createElement('div');
+            messageElement.textContent = ">>> " + event.data;
+            chatDiv.appendChild(messageElement);
+            chatDiv.scrollTop = chatDiv.scrollHeight; // Прокрутка вниз
+        };
+
+        // 3. ОТПРАВКА: Функция, которая срабатывает при нажатии кнопки
+        function send() {
+            if (input.value) {
+                socket.send(input.value); // Выстреливаем текст в сокет
+                input.value = ''; // Очищаем поле
+            }
+        }
+
+        // Обработка клавиши Enter
+        input.addEventListener("keypress", (e) => { if (e.key === "Enter") send(); });
+    </script>
+</body>
+</html>
