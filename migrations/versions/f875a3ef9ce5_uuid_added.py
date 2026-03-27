@@ -1,8 +1,8 @@
-"""start proj
+"""UUID added
 
-Revision ID: 152ebf9a779e
+Revision ID: f875a3ef9ce5
 Revises: 
-Create Date: 2026-03-25 16:53:14.416503
+Create Date: 2026-03-27 16:37:03.034972
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '152ebf9a779e'
+revision: str = 'f875a3ef9ce5'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -25,16 +25,18 @@ def upgrade() -> None:
     sa.Column('first_name', sa.String(length=50), nullable=False),
     sa.Column('second_name', sa.String(length=50), nullable=False),
     sa.Column('email', sa.String(length=50), nullable=False),
-    sa.Column('hashed_password', sa.String(length=50), nullable=False),
-    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('hashed_password', sa.String(), nullable=False),
+    sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('email'),
+    sa.UniqueConstraint('username')
     )
     op.create_table('messages',
     sa.Column('text', sa.String(length=2000), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.UUID(), nullable=True),
+    sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='SET NULL'),
