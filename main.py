@@ -1,25 +1,15 @@
-import asyncio
-import websockets
+from fastapi import FastAPI
+from routers import auth_router, register_router
+import uvicorn
+import logging
 
-clients = set()
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s")
 
-async def handler(websocket):
-    clients.add(websocket)
-    try:
-        ip, port = websocket.remote_address
-        async for message in websocket:
-            print(f"from {ip}: message")
-            if clients:
-                await asyncio.gather(*(client.send(f"{ip}: {message}") for client in clients))
-    except websockets.exceptions.ConnectionClosed:
-        print("Connection closed")
-    finally:
-        clients.remove(websocket)
-    
-async def main():
-    async with websockets.serve(handler, "0.0.0.0", 8765):
-        print('Server started on ws://localhost:8765')
-        await asyncio.Future()
+app = FastAPI()
+app.include_router(auth_router)
+app.include_router(register_router)
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    uvicorn.run(app, host='0.0.0.0', port=8000)
