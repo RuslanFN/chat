@@ -3,13 +3,16 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select
 from sqlalchemy.exc import MultipleResultsFound
 from models import User
+
 import uuid
 import logging
 logger = logging.getLogger(__name__)
 from utils import hash_password
 class UserService:
-    def __init__(self, session: AsyncSession        ):
+    def __init__(self, session: AsyncSession):
         self.session = session
+    #async def get_user_by_token(self, token: str) -> User | None:
+
     async def get_user(self, id:uuid.UUID):
         return await self.session.get(User, id)
     async def get_user_by_username(self, username: str) -> User | None:

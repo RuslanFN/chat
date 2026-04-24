@@ -22,12 +22,16 @@ class PersonalChat(BaseModel):
             ondelete='SET NULL'
         ),
         nullable=True)
+    
     messages: Mapped[List['Message']] = relationship(back_populates='personal_chat')
-    user1: Mapped['User'] =  relationship(foreign_keys=[user1_id],
+    # Оба realtion для модели User, 
+    # поэтому мы должны уточник конкретные foreign keys
+    user1: Mapped['User'] =  relationship(foreign_keys=[user1_id], 
                                            back_populates='chat_as_first')
     user2: Mapped['User'] =  relationship(foreign_keys=[user2_id], 
                                           back_populates='chat_as_second')
-
+    # Необходимо, чтобы между двумя любыми 
+    # пользователями существовал только один чат
     __table_args__ = (
         UniqueConstraint(
             'user1_id', 'user2_id', 
@@ -37,15 +41,17 @@ class PersonalChat(BaseModel):
 class GroupChat(BaseModel):
     __tablename__ = 'group_chats'
     messages: Mapped[List['Message']] = relationship(back_populates='group_chat')
-    members: Mapped[List['ChatMember']] = relationship(secondary='chat_members', back_populates='groups')
-    
+    members: Mapped[List['ChatMember']] = relationship(back_populates='group')
+
+# Класс ассоцияция для пользователя и группового чата. 
+# Ссылается на User и GroupChat и имеет к ним relation 
 class ChatMember(BaseModel):
     __tablename__ = 'chat_members'
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID,
         ForeignKey(
             'users.id',
-            ondelete='SET NULL')
+            ondelete='SET NULL') # Обычно в мессенджерах оставляют 
     )
     group_chat_id: Mapped[uuid.UUID] = mapped_column(
         UUID,
@@ -54,8 +60,10 @@ class ChatMember(BaseModel):
             ondelete='CASCADE'
         )
     )
-    user: Mapped['User'] = relationship(back_populates='groups')
+    user: Mapped['User'] = relationship(back_populates='memberships')
     group: Mapped['GroupChat'] = relationship(back_populates='members')
+    # Каждая запись участника группы должна быть 
+    # уникальна по полям user_id и group_chat_id
     __table_args__ =(
         UniqueConstraint(
             'user_id', 'group_chat_id',

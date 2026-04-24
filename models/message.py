@@ -36,6 +36,8 @@ class Message(BaseModel):
     personal_chat: Mapped['PersonalChat'] = relationship(back_populates='messages')
     group_chat: Mapped['GroupChat'] = relationship(back_populates='messages')
 
+    # Валидация на уровне БД, для проверки полей id чатов
+    # Одна из ссылок должна быть NULL а другая нет
     __table_args__ = (
         CheckConstraint(
             '(personal_chat_id is NULL) != (group_chat_id is NULL)',

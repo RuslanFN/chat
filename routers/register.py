@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from db import get_session
 from schemas import UserCreate, UserInfo
 from services import UserService
+from .auth import get_current_user
 import logging
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -25,5 +26,8 @@ async def register_user(user: UserCreate, session = Depends(get_session)):
             status_code=400,
             detail=f'Ошибка регистрации. \n{e}'
         )
-    
+
+@router.get('/me', response_model=UserInfo)
+def get_me(current_user = Depends(get_current_user)):
+    return current_user
 

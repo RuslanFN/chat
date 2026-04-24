@@ -12,11 +12,12 @@ def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
-def create_access_token(data: dict):
+def create_access_token(data: dict) -> Dict:
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(minutes=30)
     to_encode['exp'] = expire
-    return jwt.encode(to_encode, SECRET_KEY, ALGORITHM)
+    token = jwt.encode(to_encode, SECRET_KEY, ALGORITHM)
+    return {"access_token": token, "token_type": "bearer"}
 def decode_access_token(token: str) -> Dict | None:
     try:
         payload = jwt.decode(token, SECRET_KEY, ALGORITHM)
