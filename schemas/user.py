@@ -26,3 +26,4 @@ class UserInfo(BaseModel):
     first_name: str = Field(max_length=50)
     second_name: str = Field(max_length=50)
     email: str = Field(max_length=50)
+    model_config = {'from_attributes': True}

@@ -12,20 +12,45 @@ class ChatService:
         self.session = session
 
     async def get_personal_chat_by_pk(self, pk: uuid.UUID) -> PersonalChat | None:
-        return await self.session.get(PersonalChat, pk)
+        return await self.session.get(
+            PersonalChat, 
+            pk, 
+            options=(joinedload(PersonalChat.user1),
+                      joinedload(PersonalChat.user2))
+        )
     
-    async def get_personal_chat_by_users(self, user1_id: uuid.UUID, user2_id: uuid.UUID) -> PersonalChat | None:
-        user1_id, user2_id = max(user1_id, user2_id), min(user1_id, user2_id)
-        stmt = select(PersonalChat).where(PersonalChat.user1_id == user1_id, PersonalChat.user2_id == user2_id)
+    async def get_personal_chat_by_users(self, current_user_id: uuid.UUID, recipent_user_id: uuid.UUID) -> PersonalChat | None:
+        user1_id, user2_id = max(current_user_id, recipent_user_id), min(current_user_id, recipent_user_id)
+        stmt = (select(PersonalChat)
+                .where(
+                    PersonalChat.user1_id == user1_id, 
+                    PersonalChat.user2_id == user2_id)
+                .options(
+                    joinedload(PersonalChat.user1), 
+                    joinedload(PersonalChat.user2))
+                )
         try:
             result = await self.session.execute(stmt)
-            return result.scalar_one_or_none()
+            new_personal_chat = result.scalar_one_or_none()
+            if new_personal_chat.user1_id == current_user_id:
+                    chat_with = new_personal_chat.user2_id
+                    chat_name = f'{new_personal_chat.user2.first_name} {new_personal_chat.user2.second_name}'  
+            else: 
+                chat_with = new_personal_chat.user1_id
+                chat_name = f'{new_personal_chat.user1.first_name} {new_personal_chat.user1.second_name}'
+            chat_info = {
+                'chat_name': chat_name,
+                'id': new_personal_chat.id,
+                'user1': new_personal_chat.user1,
+                'user2': new_personal_chat.user2,
+                'chat_with': chat_with}
+            return chat_info
         except Exception as e:
             logger.error(f'Ошибка запроса к бд. \ne')
             return None
     
-    async def create_personal_chat(self, user1_id, user2_id) -> PersonalChat | None:
-        user1_id, user2_id = max(user1_id, user2_id), min(user1_id, user2_id)
+    async def create_personal_chat(self, current_user_id: uuid.UUID, recipent_user_id: uuid.UUID) -> PersonalChat | None:
+        user1_id, user2_id = max(current_user_id, recipent_user_id), min(current_user_id, recipent_user_id)
         personal_chat = PersonalChat(
             user1_id=user1_id,
             user2_id=user2_id            
@@ -33,8 +58,27 @@ class ChatService:
         self.session.add(personal_chat)
         try:
             await self.session.commit()
-            await self.session.refresh(personal_chat)
-            return personal_chat
+            new_personal_chat =  (await self.session.get(
+                PersonalChat, 
+                personal_chat.id, 
+                options=(
+                    joinedload(PersonalChat.user1),
+                    joinedload(PersonalChat.user2))
+                )
+            )
+            if new_personal_chat.user1_id == current_user_id:
+                    chat_with = personal_chat.user2_id
+                    chat_name = f'{personal_chat.user2.first_name} {personal_chat.user2.second_name}'  
+            else: 
+                chat_with = personal_chat.user1_id
+                chat_name = f'{personal_chat.user1.first_name} {personal_chat.user1.second_name}'
+            chat_info = {
+                'chat_name': chat_name,
+                'id': personal_chat.id,
+                'user1': personal_chat.user1,
+                'user2': personal_chat.user2,
+                'chat_with': chat_with}
+            return chat_info
         except IntegrityError as e:
             logger.error(f'Ошибка создания чата. \n{e}')
             await self.session.rollback()
@@ -54,7 +98,6 @@ class ChatService:
                 joinedload(PersonalChat.user2))
         )
         group_chats = select(ChatMember.group).where(ChatMember.user_id == uuid).options()
-
         response = {
             'personal_chats':[],
             'group_chats':[]}
@@ -70,8 +113,8 @@ class ChatService:
                 chat_info = {
                     'chat_name': chat_name,
                     'id': personal_chat.id,
-                    'user1_id': personal_chat.user1_id,
-                    'user2_id': personal_chat.user2_id,
+                    'user1': personal_chat.user1,
+                    'user2': personal_chat.user2,
                     'chat_with': chat_with}
                 response['personal_chats'].append(chat_info)
             group_chats_list = await self.session.execute(group_chats)

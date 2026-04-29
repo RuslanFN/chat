@@ -26,6 +26,21 @@ async def register_user(user: UserCreate, session = Depends(get_session)):
             status_code=400,
             detail=f'Ошибка регистрации. \n{e}'
         )
+@router.get('/get_user_by_username/{username}', response_model=UserInfo)
+async def get_user_by_username(
+    username: str,
+    current_user = Depends(get_current_user), 
+    session = Depends(get_session)):
+    service = UserService(session)
+    user = await service.get_user_by_username(username)
+    print(user)
+    if user:
+        return user
+    else:
+        raise HTTPException(
+            status_code=404,
+            detail=f'Пользователь {username} не найден'
+        )
 
 @router.get('/me', response_model=UserInfo)
 def get_me(current_user = Depends(get_current_user)):

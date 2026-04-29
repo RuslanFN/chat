@@ -15,14 +15,25 @@ class UserService:
 
     async def get_user(self, id:uuid.UUID):
         return await self.session.get(User, id)
+    
     async def get_user_by_username(self, username: str) -> User | None:
         stmt = select(User).where(User.username == username)
         try:
             user = await self.session.execute(stmt)
             return user.scalar_one_or_none()
         except MultipleResultsFound as e:
-            logging.critical(f'Обнаружено несколько пользователей с одинаковым username.\n {e}')
-            return None
+            logger.critical(f'Обнаружено несколько пользователей с одинаковым username.\n {e}')
+        except Exception as e:
+            logger.error(f'Ошибка поиска пользователя {e}')
+        return None
+    async def get_user_by_email(self, email: str) -> User | None:
+        stmt = select(User).where(User.email == email)
+        try:
+            result = await self.session.execute(stmt)
+            return result.scalar_one_or_none()
+        except Exception as e:
+            logger.error(f'Ошибка поиска пользователя {e}')
+        return None
     async def create_user(
             self,
             username: str, 

@@ -9,4 +9,5 @@ __all__ = [
     'message_router',
     'ws_wouter',
     'chat_router',
+    'manager'
 ]
