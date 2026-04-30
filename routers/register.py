@@ -33,7 +33,7 @@ async def get_user_by_username(
     session = Depends(get_session)):
     service = UserService(session)
     user = await service.get_user_by_username(username)
-    print(user)
+    print(user, username)
     if user:
         return user
     else:
